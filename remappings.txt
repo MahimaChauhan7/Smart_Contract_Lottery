@@ -1,5 +1,5 @@
 chainlink/=lib/chainlink/contracts/
 forge-std/=lib/forge-std/src/
-@solmate/=lib/solmate/src
+@solmate/=lib/solmate/src/
 @openzeppelin/=lib/openzeppelin-contracts/
 

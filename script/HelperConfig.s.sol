@@ -35,7 +35,7 @@ contract HelperConfig is CodeConstants, Script {
     NetworkConfig public localNetworkConfig;
 
     constructor() {
-        networkConfigs[ETH_SEPOLIA_CHAIN_ID] = getSepoliaEthConfig();
+        // Don't initialize Sepolia config in constructor to avoid env var errors during tests
     }
 
     function getSepoliaEthConfig() public view returns (NetworkConfig memory) {
@@ -51,15 +51,15 @@ contract HelperConfig is CodeConstants, Script {
         });
     }
 
-    function getConfig() public view returns (NetworkConfig memory) {
+    function getConfig() public returns (NetworkConfig memory) {
         return getConfigByChainId(block.chainid);
     }
 
-    function getConfigByChainId(uint256 chainId) public view returns (NetworkConfig memory) {
-        if (networkConfigs[chainId].vrfCoordinatorV2_5 != address(0)) {
-            return networkConfigs[chainId];
+    function getConfigByChainId(uint256 chainId) public returns (NetworkConfig memory) {
+        if (chainId == ETH_SEPOLIA_CHAIN_ID) {
+            return getSepoliaEthConfig();
         } else if (chainId == LOCAL_CHAIN_ID) {
-            return localNetworkConfig;
+            return getOrCreateAnvilEthConfig();
         } else {
             revert HelperConfig__InvalidChainId();
         }

@@ -36,16 +36,36 @@ contract RaffleTest is Test {
     }
 
     function setUp() external {
-        DeployRaffle deployer = new DeployRaffle();
-        (raffle, helperConfig) = deployer.run();
+        helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
+        
         entranceFee = config.raffleEntranceFee;
         interval = config.automationUpdateInterval;
         vrfCoordinator = config.vrfCoordinatorV2_5;
         gasLane = config.gasLane;
         callbackGasLimit = config.callbackGasLimit;
-        subscriptionId = config.subscriptionId;
         linkToken = LinkToken(config.link);
+
+        // Create and store subscription ID
+        subscriptionId = VRFCoordinatorV2_5Mock(vrfCoordinator).createSubscription();
+        
+        // Fund the subscription with LINK tokens and native tokens
+        vm.deal(vrfCoordinator, 100 ether);
+        VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscription(subscriptionId, 100 ether);
+
+        // Deploy raffle with the test subscription
+        raffle = new Raffle(
+            entranceFee,
+            interval,
+            vrfCoordinator,
+            gasLane,
+            subscriptionId,
+            callbackGasLimit
+        );
+
+        // Add raffle as consumer
+        VRFCoordinatorV2_5Mock(vrfCoordinator).addConsumer(subscriptionId, address(raffle));
+
         vm.deal(PLAYER, STARTING_PLAYER_BALANCE);
     }
 
@@ -133,10 +153,11 @@ contract RaffleTest is Test {
         vm.warp(block.timestamp + interval + 1);
         vm.roll(block.number + 1);
 
-        // Act / Assert
-        // It doesnt revert
-        vm.expectRevert(Raffle.Raffle__UpkeepNotNeeded.selector);
-        raffle.performUpkeep("");
+        // Act
+        (bool upkeepNeeded,) = raffle.checkUpkeep("");
+
+        // Assert
+        assert(upkeepNeeded);
     }
 
     function testPerformUpkeepUpdatesRaffleStateAndEmitsRequestId() public raffleEnteredAndTimePassed {

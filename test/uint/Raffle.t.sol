@@ -38,7 +38,7 @@ contract RaffleTest is Test {
     function setUp() external {
         helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
-        
+
         entranceFee = config.raffleEntranceFee;
         interval = config.automationUpdateInterval;
         vrfCoordinator = config.vrfCoordinatorV2_5;
@@ -48,20 +48,13 @@ contract RaffleTest is Test {
 
         // Create and store subscription ID
         subscriptionId = VRFCoordinatorV2_5Mock(vrfCoordinator).createSubscription();
-        
+
         // Fund the subscription with LINK tokens and native tokens
         vm.deal(vrfCoordinator, 100 ether);
         VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscription(subscriptionId, 100 ether);
 
         // Deploy raffle with the test subscription
-        raffle = new Raffle(
-            entranceFee,
-            interval,
-            vrfCoordinator,
-            gasLane,
-            subscriptionId,
-            callbackGasLimit
-        );
+        raffle = new Raffle(entranceFee, interval, vrfCoordinator, gasLane, subscriptionId, callbackGasLimit);
 
         // Add raffle as consumer
         VRFCoordinatorV2_5Mock(vrfCoordinator).addConsumer(subscriptionId, address(raffle));
